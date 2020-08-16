@@ -36,25 +36,32 @@ import sys
 import os
 import uuid
 
+
 class FailedLoadModuleException(Exception):
     pass
+
 
 class FailedLoadModuleConfigException(FailedLoadModuleException):
     pass
 
+
 class FailedLoadModuleImportException(FailedLoadModuleException):
     pass
+
 
 class FailedLoadModuleInitializationException(FailedLoadModuleException):
     pass
 
-def debug_log(enable = True):
+
+def debug_log(enable=True):
     def new_dec(fu):
         def new_fu(*args, **kwargs):
             self = args[0]
             log = self.log()
-            skwargs = ','.join(['%s=%s' % (karg,repr(arg)) for karg, arg in kwargs])
-            sargs = ','.join([str(arg) for arg in args[1:]]) + '' if not skwargs else (',' + str(skwargs))
+            skwargs = ','.join(['%s=%s' % (karg, repr(arg))
+                                for karg, arg in kwargs])
+            sargs = ','.join([str(arg) for arg in args[1:]]) + \
+                '' if not skwargs else (',' + str(skwargs))
 
             call = "%s(%s)" % (fu.__name__, sargs)
             log.debug(call)
@@ -65,8 +72,8 @@ def debug_log(enable = True):
     return new_dec
 
 
-
 debug_me = True
+
 
 class MumoManagerRemote(object):
     """
@@ -76,7 +83,7 @@ class MumoManagerRemote(object):
     as do other signaling to the master MumoManager.
     """
 
-    SERVERS_ALL = [-1] ## Applies to all servers
+    SERVERS_ALL = [-1]  # Applies to all servers
 
     def __init__(self, master, name, queue):
         self.__master = master
@@ -88,7 +95,7 @@ class MumoManagerRemote(object):
     def getQueue(self):
         return self.__queue
 
-    def subscribeMetaCallbacks(self, handler, servers = SERVERS_ALL):
+    def subscribeMetaCallbacks(self, handler, servers=SERVERS_ALL):
         """
         Subscribe to meta callbacks. Subscribes the given handler to the following
         callbacks:
@@ -102,7 +109,7 @@ class MumoManagerRemote(object):
         """
         return self.__master.subscribeMetaCallbacks(self.__queue, handler, servers)
 
-    def unsubscribeMetaCallbacks(self, handler, servers = SERVERS_ALL):
+    def unsubscribeMetaCallbacks(self, handler, servers=SERVERS_ALL):
         """
         Unsubscribe from meta callbacks. Unsubscribes the given handler from callbacks
         for the given servers.
@@ -113,7 +120,7 @@ class MumoManagerRemote(object):
         """
         return self.__master.unscubscribeMetaCallbacks(self.__queue, handler, servers)
 
-    def subscribeServerCallbacks(self, handler, servers = SERVERS_ALL):
+    def subscribeServerCallbacks(self, handler, servers=SERVERS_ALL):
         """
         Subscribe to server callbacks. Subscribes the given handler to the following
         callbacks:
@@ -131,7 +138,7 @@ class MumoManagerRemote(object):
         """
         return self.__master.subscribeServerCallbacks(self.__queue, handler, servers)
 
-    def unsubscribeServerCallbacks(self, handler, servers = SERVERS_ALL):
+    def unsubscribeServerCallbacks(self, handler, servers=SERVERS_ALL):
         """
         Unsubscribe from server callbacks. Unsubscribes the given handler from callbacks
         for the given servers.
@@ -182,15 +189,17 @@ class MumoManagerRemote(object):
         action_cb = server_actions.get(action)
         if not action_cb:
             # We need to create an register a new context callback
-            action_cb = self.__master.createContextCallback(self.__handle_context_callback, handler, server)
+            action_cb = self.__master.createContextCallback(
+                self.__handle_context_callback, handler, server)
             server_actions[action] = action_cb
 
-        server.addContextCallback(user.session, action, text, action_cb, context)
+        server.addContextCallback(
+            user.session, action, text, action_cb, context)
 
     def __handle_context_callback(self, handler, server, action, user, target_session, target_channelid, current=None):
         """
         Small callback wrapper for context menu operations.
- 
+
         Translates the given target into the corresponding object and
         schedules a call to the actual user context menu handler which
         will be executed in the modules thread.
@@ -240,22 +249,22 @@ class MumoManagerRemote(object):
 class MumoManager(Worker):
     MAGIC_ALL = -1
 
-    cfg_default = {'modules':(('mod_dir', str, "modules/"),
-                              ('cfg_dir', str, "modules-enabled/"),
-                              ('timeout', int, 2))}
+    cfg_default = {'modules': (('mod_dir', str, "modules/"),
+                               ('cfg_dir', str, "modules-enabled/"),
+                               ('timeout', int, 2))}
 
-    def __init__(self, murmur, context_callback_type, cfg = Config(default = cfg_default)):
+    def __init__(self, murmur, context_callback_type, cfg=Config(default=cfg_default)):
         Worker.__init__(self, "MumoManager")
-        self.queues = {} # {queue:module}
-        self.modules = {} # {name:module}
-        self.imports = {} # {name:import}
+        self.queues = {}  # {queue:module}
+        self.modules = {}  # {name:module}
+        self.imports = {}  # {name:import}
         self.cfg = cfg
 
         self.murmur = murmur
         self.meta = None
         self.client_adapter = None
 
-        self.metaCallbacks = {} # {sid:{queue:[handler]}}
+        self.metaCallbacks = {}  # {sid:{queue:[handler]}}
         self.serverCallbacks = {}
 
         self.context_callback_type = context_callback_type
@@ -279,7 +288,7 @@ class MumoManager(Worker):
                 else:
                     mdict[server][queue] = [handler]
             else:
-                mdict[server] = {queue:[handler]}
+                mdict[server] = {queue: [handler]}
 
     def __rem_from_dict(self, mdict, queue, handler, servers):
         for server in servers:
@@ -310,14 +319,16 @@ class MumoManager(Worker):
             try:
                 for queue, handlers in mdict[server].items():
                     for handler in handlers:
-                        self.__call_remote(queue, handler, function, *args, **kwargs)
+                        self.__call_remote(
+                            queue, handler, function, *args, **kwargs)
             except KeyError:
                 # No handler registered for that server
                 pass
 
     def __call_remote(self, queue, handler, function, *args, **kwargs):
         try:
-            func = getattr(handler, function) # Find out what to call on target
+            # Find out what to call on target
+            func = getattr(handler, function)
             queue.put((None, func, args, kwargs))
         except AttributeError as e:
             mod = self.queues.get(queue, None)
@@ -330,13 +341,12 @@ class MumoManager(Worker):
             else:
                 self.log().exception(e)
 
-
     #
-    #-- Module multiplexing functionality
+    # -- Module multiplexing functionality
     #
 
     @local_thread
-    def announceConnected(self, meta = None):
+    def announceConnected(self, meta=None):
         """
         Call connected handler on all handlers
         """
@@ -362,7 +372,8 @@ class MumoManager(Worker):
         @param args List of arguments
         @param kwargs List of keyword arguments
         """
-        self.__announce_to_dict(self.metaCallbacks, server, function, *args, **kwargs)
+        self.__announce_to_dict(
+            self.metaCallbacks, server, function, *args, **kwargs)
 
     @local_thread
     def announceServer(self, server, function, *args, **kwargs):
@@ -374,10 +385,11 @@ class MumoManager(Worker):
         @param args List of arguments
         @param kwargs List of keyword arguments
         """
-        self.__announce_to_dict(self.serverCallbacks, server, function, *args, **kwargs)
+        self.__announce_to_dict(self.serverCallbacks,
+                                server, function, *args, **kwargs)
 
     #
-    #--- Module self management functionality
+    # --- Module self management functionality
     #
 
     @local_thread
@@ -428,8 +440,10 @@ class MumoManager(Worker):
         @return Murmur ServerContextCallbackPrx object for the context
                 callback handler class.
         """
-        contextcbprx = self.client_adapter.addWithUUID(self.context_callback_type(callback, *ctx))
-        contextcb = self.murmur.ServerContextCallbackPrx.uncheckedCast(contextcbprx)
+        contextcbprx = self.client_adapter.addWithUUID(
+            self.context_callback_type(callback, *ctx))
+        contextcb = self.murmur.ServerContextCallbackPrx.uncheckedCast(
+            contextcbprx)
 
         return contextcb
 
@@ -439,11 +453,11 @@ class MumoManager(Worker):
         """
         return self.meta
 
-    #--- Module load/start/stop/unload functionality
+    # --- Module load/start/stop/unload functionality
     #
     @local_thread_blocking
     @debug_log(debug_me)
-    def loadModules(self, names = None):
+    def loadModules(self, names=None):
         """
         Loads a list of modules from the mumo directory structure by name.
 
@@ -469,18 +483,18 @@ class MumoManager(Worker):
         for name in names:
             try:
                 modinst = self._loadModule_noblock(name)
-                loadedmodules[name] =  modinst
+                loadedmodules[name] = modinst
             except FailedLoadModuleException:
                 pass
 
         return loadedmodules
 
     @local_thread_blocking
-    def loadModuleCls(self, name, modcls, module_cfg = None):
+    def loadModuleCls(self, name, modcls, module_cfg=None):
         return self._loadModuleCls_noblock(name, modcls, module_cfg)
 
     @debug_log(debug_me)
-    def _loadModuleCls_noblock(self, name, modcls, module_cfg = None):
+    def _loadModuleCls_noblock(self, name, modcls, module_cfg=None):
         log = self.log()
 
         if name in self.modules:
@@ -550,7 +564,8 @@ class MumoManager(Worker):
 
         try:
             try:
-                modcls = mod.mumo_module_class # First check if there's a magic mumo_module_class variable
+                # First check if there's a magic mumo_module_class variable
+                modcls = mod.mumo_module_class
                 log.debug("Magic mumo_module_class found")
             except AttributeError:
                 modcls = getattr(mod, name)
@@ -563,7 +578,7 @@ class MumoManager(Worker):
 
     @local_thread_blocking
     @debug_log(debug_me)
-    def startModules(self, names = None):
+    def startModules(self, names=None):
         """
         Start a module by name
 
@@ -593,7 +608,7 @@ class MumoManager(Worker):
 
     @local_thread_blocking
     @debug_log(debug_me)
-    def stopModules(self, names = None, force = False):
+    def stopModules(self, names=None, force=False):
         """
         Stop a list of modules by name. Note that this only works
         for well behaved modules. At this point if a module is really going
@@ -623,8 +638,10 @@ class MumoManager(Worker):
             for queue, module in self.queues.items():
                 if module in self.modules:
                     try:
-                        while queue.get_nowait(): pass
-                    except queue.Empty: pass
+                        while queue.get_nowait():
+                            pass
+                    except queue.Empty:
+                        pass
 
         for modinst in stoppedmodules.values():
             if modinst.isAlive():
@@ -634,15 +651,14 @@ class MumoManager(Worker):
                 log.debug("Module '%s' already stopped", name)
 
         for modinst in stoppedmodules.values():
-            modinst.join(timeout = self.cfg.modules.timeout)
+            modinst.join(timeout=self.cfg.modules.timeout)
 
         return stoppedmodules
 
-    def stop(self, force = True):
+    def stop(self, force=True):
         """
         Stops all modules and shuts down the manager.
         """
         self.log().debug("Stopping")
         self.stopModules()
         Worker.stop(self, force)
-

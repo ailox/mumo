@@ -32,15 +32,17 @@
 import configparser
 import types
 
+
 class Config(object):
     """
     Small abstraction for config loading
     """
 
-    def __init__(self, filename = None, default = None):
+    def __init__(self, filename=None, default=None):
         if (filename and not default) or \
-            (not filename and not default): return
-        
+                (not filename and not default):
+            return
+
         sections = set(default.keys())
         if filename:
             cfg = configparser.RawConfigParser()
@@ -48,20 +50,21 @@ class Config(object):
             with open(filename) as f:
                 cfg.readfp(f)
             sections.update(cfg.sections())
-            
+
         for section in sections:
-            if type(section) == types.FunctionType: continue
-            
+            if type(section) == types.FunctionType:
+                continue
+
             match = None
             for default_section in default.keys():
                 try:
                     if section == default_section or \
-                        (type(default_section) == types.FunctionType and default_section(section)):
+                            (type(default_section) == types.FunctionType and default_section(section)):
                         match = default_section
                         break
                 except ValueError:
                     continue
-                
+
             if match == None:
                 continue
 
@@ -83,15 +86,17 @@ class Config(object):
                         self.__dict__[section].__dict__[name] = vdefault
                     else:
                         try:
-                            self.__dict__[section].__dict__[name] = conv(cfg.get(section, name))
+                            self.__dict__[section].__dict__[
+                                name] = conv(cfg.get(section, name))
                         except (ValueError, configparser.NoSectionError, configparser.NoOptionError):
                             self.__dict__[section].__dict__[name] = vdefault
-    
+
     def __getitem__(self, key):
         return self.__dict__.__getitem__(key)
-    
+
     def __contains__(self, key):
         return self.__dict__.__contains__(key)
+
 
 def x2bool(s):
     """
@@ -103,6 +108,7 @@ def x2bool(s):
         return s.strip().lower() in ['1', 'true']
     raise ValueError()
 
+
 def commaSeperatedIntegers(s):
     """
     Helper function to convert a string from the config
@@ -110,12 +116,14 @@ def commaSeperatedIntegers(s):
     """
     return list(map(int, s.split(',')))
 
+
 def commaSeperatedStrings(s):
     """
     Helper function to convert a string from the config
     containing comma seperated strings into a list of strings
     """
     return list(map(str.strip, s.split(',')))
+
 
 def commaSeperatedBool(s):
     """

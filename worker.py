@@ -33,6 +33,7 @@ from threading import Thread
 from queue import Queue, Empty
 from logging import getLogger
 
+
 def local_thread(fu):
     """
     Decorator which makes a function execute in the local worker thread
@@ -43,65 +44,67 @@ def local_thread(fu):
         self.message_queue().put((None, fu, args, kwargs))
     return new_fu
 
-def local_thread_blocking(fu, timeout = None):
+
+def local_thread_blocking(fu, timeout=None):
     """
     Decorator which makes a function execute in the local worker thread
     The function will block until return values are available or timeout
     seconds passed.
-    
+
     @param timeout Timeout in seconds 
     """
     def new_fu(*args, **kwargs):
         self = args[0]
         out = Queue()
         self.message_queue().put((out, fu, args, kwargs))
-        ret, ex =  out.get(True, timeout)
+        ret, ex = out.get(True, timeout)
         if ex:
             raise ex
-        
+
         return ret
-    
+
     return new_fu
 
 
 class Worker(Thread):
-    def __init__(self, name, message_queue = None):
+    def __init__(self, name, message_queue=None):
         """
         Implementation of a basic Queue based Worker thread.
-        
+
         @param name Name of the thread to run the worker in
         @param message_queue Message queue on which to receive commands  
         """
-        
-        Thread.__init__(self, name = name)
+
+        Thread.__init__(self, name=name)
         self.daemon = True
         self.__in = message_queue if message_queue != None else Queue()
         self.__log = getLogger(name)
         self.__name = name
-    
+
     #--- Accessors
     def log(self):
         return self.__log
-    
+
     def name(self):
         return self.__name
-    
+
     def message_queue(self):
         return self.__in
 
-    #--- Overridable convience stuff
+    # --- Overridable convience stuff
     def onStart(self):
         """
         Override this function to perform actions on worker startup
         """
         pass
-    
+
     def onStop(self):
         """
         Override this function to perform actions on worker shutdown
         """
         pass
     #--- Thread / Control
+
     def run(self):
         self.log().debug("Enter message loop")
         self.onStart()
@@ -109,7 +112,7 @@ class Worker(Thread):
             msg = self.__in.get()
             if msg == None:
                 break
-            
+
             (out, fu, args, kwargs) = msg
             try:
                 res = fu(*args, **kwargs)
@@ -121,26 +124,26 @@ class Worker(Thread):
             finally:
                 if not out is None:
                     out.put((res, ex))
-                    
+
         self.onStop()
         self.log().debug("Leave message loop")
-        
-    def stop(self, force = True):
+
+    def stop(self, force=True):
         if force:
             try:
                 while True:
                     self.__in.get_nowait()
             except Empty:
                 pass
-        
+
         self.__in.put(None)
-    
+
     #--- Helpers
-    
+
     @local_thread
     def call_by_name(self, handler, function_name, *args, **kwargs):
         return getattr(handler, function_name)(*args, **kwargs)
-    
+
     @local_thread_blocking
     def call_by_name_blocking(self, handler, function_name, *args, **kwargs):
         return getattr(handler, function_name)(*args, **kwargs)

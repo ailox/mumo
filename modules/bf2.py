@@ -299,7 +299,7 @@ class bf2(MumoModule):
         if state.is_linked and len(splitcontext) == 2 and state.identity: 
             try:
                 context = json.loads(splitcontext[1])
-                verify(context, "ipport", basestring)
+                verify(context, "ipport", str)
                 
                 for i in range(cfg.bf2.gamecount):
                     # Try to find a matching game
@@ -319,7 +319,7 @@ class bf2(MumoModule):
                 context["gamename"] = gamename
                 state.parsedcontext = context
 
-            except (ValueError, KeyError, AttributeError), e:
+            except (ValueError, KeyError, AttributeError) as e:
                 log.debug("Invalid context for %s (%d|%d) on server %d: %s", state.name, state.session, state.userid, sid, repr(e))
         
             try:
@@ -329,7 +329,7 @@ class bf2(MumoModule):
                 verify(identity, "squad", int)
                 if identity["squad"] < 0 or identity["squad"] > 9:
                     raise ValueError("Invalid squad number")
-                verify(identity, "team", basestring)
+                verify(identity, "team", str)
                 if identity["team"] != "opfor" and identity["team"] != "blufor":
                     raise ValueError("Invalid team identified")
                 #LEGACY: Ice 3.2 cannot handle unicode strings
@@ -337,7 +337,7 @@ class bf2(MumoModule):
                 
                 state.parsedidentity = identity
                 
-            except (KeyError, ValueError), e:
+            except (KeyError, ValueError) as e:
                 log.debug("Invalid identity for %s (%d|%d) on server %d: %s", state.name, state.session, state.userid, sid, repr(e))
 
         # Update state and remember it

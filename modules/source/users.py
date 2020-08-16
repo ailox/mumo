@@ -126,7 +126,7 @@ class UserRegistry(object):
         """
         Return true if any user in the registry is occupying the given channel
         """
-        for user in self.users[sid].itervalues():
+        for user in self.users[sid].values():
             if user.state and user.state.channel == cid:
                 return True
         

@@ -40,8 +40,8 @@ from mumo_module import (MumoModule,
                          commaSeperatedStrings,
                          x2bool)
 
-from db import SourceDB
-from users import (User, UserRegistry)
+from .db import SourceDB
+from .users import (User, UserRegistry)
 
 import re
     
@@ -559,7 +559,7 @@ class source(MumoModule):
             
             return (game, server)
             
-        except (AttributeError, ValueError),e:
+        except (AttributeError, ValueError) as e:
             return (None, None);
     
     def parseSourceIdentity(self, identity):

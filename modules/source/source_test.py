@@ -30,11 +30,11 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import unittest
-import Queue
+import queue
 import config
 import re
 import logging
-import source
+from . import source
 
 class InvalidChannelExceptionMock(Exception):
     pass
@@ -151,14 +151,14 @@ class MetaMock():
         return self.servers.get(sid, None)
 
     def _reset(self):
-        for server in self.servers.itervalues():
+        for server in self.servers.values():
             server._reset()
 
 class ManagerMock():
     SERVERS_ALL = [-1]
     
     def __init__(self):
-        self.q = Queue.Queue()
+        self.q = queue.Queue()
         self.m = MurmurMock()
         self.meta = MetaMock()
         
@@ -300,7 +300,7 @@ class Test(unittest.TestCase):
         i = 0
         for thing in things:
             acl = acls[i]
-            for attr, val in thing.iteritems():
+            for attr, val in thing.items():
                 self.assertEqual(getattr(acl, attr), val)
             i += 1
     
@@ -524,7 +524,7 @@ class Test(unittest.TestCase):
         game = 'cstrike'; server = '[A-1:12345]'; team = 1
         self.s.getOrCreateChannelFor(mumble_server, game, server, team)
         cids = []
-        for c in mumble_server.channels.itervalues():
+        for c in mumble_server.channels.values():
             c.name = str(c.id)
             self.s.channelStateChanged(mumble_server, c)
             cids.append(c.id)
